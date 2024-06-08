@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trivia Quiz Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to right, #6a11cb, #2575fc);
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden; /* Prevent scrollbars on the body */
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            color: #333;
+            overflow-y: auto; /* Enable vertical scrolling */
+            max-height: 90vh; /* Ensure it fits within the viewport */
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        #question {
+            font-size: 22px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .option {
+            background-color: #007bff;
+            color: #fff;
+            margin: 10px;
+            cursor: pointer;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            display: inline-block;
+            transition: background-color 0.3s;
+        }
+        .option:hover {
+            background-color: #0056b3;
+        }
+        #result {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        #timer {
+            margin-bottom: 20px;
+            font-weight: bold;
+            font-size: 18px;
+            color: #ff0000;
+        }
+        #nextBtn {
+            background-color: #28a745;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #nextBtn:hover {
+            background-color: #218838;
+        }
+        #showAnswersBtn {
+            background-color: #17a2b8;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 20px;
+        }
+        #showAnswersBtn:hover {
+            background-color: #138496;
+        }
+        .answer {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .answer b {
+            display: block;
+        }
+        .correct {
+            color: green;
+        }
+        .incorrect {
+            color: red;
+        }
+        .coins {
+            margin-top: 20px;
+            font-size: 18px;
+            color: gold;
+        }
+        .coins:before {
+            content: "💰 ";
+        }
+
+        /* Start quiz window styles */
+        .start-quiz-window {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: #fff;
+        }
+
+        .start-quiz-window h2,
+        .start-quiz-window p {
+            margin-bottom: 20px;
+        }
+
+        .start-quiz-window button {
+            background-color: #28a745;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .start-quiz-window button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div id="startQuizWindow" class="start-quiz-window">
+        <h2>Welcome to the Trivia Quiz Game!</h2>
+        <p>Are you ready to test your knowledge?</p>
+        <button onclick="startQuiz()">Start Quiz</button>
+    </div>
+
+    <div class="container" style="display: none;">
+        <h1>Trivia Quiz Game</h1>
+        <div id="coins" class="coins">Coins: 0</div>
+        <div id="timer"></div>
+        <div id="question"></div>
+        <div id="options"></div>
+        <div id="result"></div>
+        <button id="nextBtn" style="display: none;" onclick="nextQuestion()">Next Question</button>
+        <button id="showAnswersBtn" style="display: none;" onclick="showAllAnswers()">Show All Questions and Answers</button>
+    </div>
+
+    <script>
+         const questions = [
+    { question: "What is the capital of France?", options: ["London", "Paris", "Berlin", "Rome"], answer: "Paris" },
+    { question: "Where is the famous 'Taj Mahal' located?", options: ["Delhi", "Jaipur", "Agra", "Mumbai"], answer: "Agra" },
+    { question: "Which country is famous for the pyramids?", options: ["Mexico", "Egypt", "Italy", "Greece"], answer: "Egypt" },
+    { question: "Who is known as the 'Father of the Nation' in India?", options: ["Mahatma Gandhi", "Jawaharlal Nehru", "Sardar Vallabhbhai Patel", "Subhas Chandra Bose"], answer: "Mahatma Gandhi" },
+    { question: "What is the official language of India?", options: ["Hindi", "English", "Bengali", "Telugu"], answer: "Hindi" },
+    { question: "What is the largest desert in the world?", options: ["Sahara Desert", "Arabian Desert", "Gobi Desert", "Kalahari Desert"], answer: "Sahara Desert" },
+    { question: "Which city is known as the 'Pink City' of India?", options: ["Jaipur", "Agra", "Mumbai", "Kolkata"], answer: "Jaipur" },
+    { question: "Who composed the Indian National Anthem?", options: ["Rabindranath Tagore", "Subhas Chandra Bose", "Mahatma Gandhi", "Jawaharlal Nehru"], answer: "Rabindranath Tagore" },
+    { question: "Which state in India is known as the 'Land of Five Rivers'?", options: ["Punjab", "Haryana", "Uttar Pradesh", "Rajasthan"], answer: "Punjab" },
+    { question: "What is the largest mammal in the world?", options: ["Elephant", "Blue Whale", "Great White Shark", "Giraffe"], answer: "Blue Whale" },
+    { question: "Which country is known as the Land of the Rising Sun?", options: ["China", "South Korea", "Japan", "Thailand"], answer: "Japan" },
+    { question: "What is the longest river in the world?", options: ["Nile", "Amazon", "Yangtze", "Mississippi"], answer: "Nile" },
+    { question: "Which planet is closest to the sun?", options: ["Venus", "Earth", "Mercury", "Mars"], answer: "Mercury" },
+    { question: "What is the hardest natural substance on Earth?", options: ["Gold", "Iron", "Diamond", "Platinum"], answer: "Diamond" },
+    { question: "In which year did India gain independence from British rule?", options: ["1947", "1950", "1930", "1962"], answer: "1947" },
+    { question: "What is the national flower of India?", options: ["Rose", "Lotus", "Jasmine", "Sunflower"], answer: "Lotus" },
+    { question: "Which gas is most abundant in the Earth's atmosphere?", options: ["Oxygen", "Hydrogen", "Nitrogen", "Carbon Dioxide"], answer: "Nitrogen" },
+    { question: "What is the fastest land animal?", options: ["Lion", "Tiger", "Cheetah", "Elephant"], answer: "Cheetah" },
+    { question: "What is the tallest mountain in the world?", options: ["K2", "Kangchenjunga", "Mount Everest", "Lhotse"], answer: "Mount Everest" },
+    { question: "Which mountain range separates India from the rest of Asia?", options: ["Himalayas", "Western Ghats", "Eastern Ghats", "Vindhya Range"], answer: "Himalayas" }
+];
+
+
+    
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let timer;
+        let userAnswers = [];
+        let coins = 0;
+    
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+    
+        function shuffleOptions(questions) {
+            questions.forEach(question => shuffle(question.options));
+        }
+    
+        function displayQuestion() {
+            const currentQuestion = questions[currentQuestionIndex];
+            document.getElementById("question").textContent = currentQuestion.question;
+            const optionsContainer = document.getElementById("options");
+            optionsContainer.innerHTML = "";
+            currentQuestion.options.forEach(option => {
+                const optionElement = document.createElement("div");
+                optionElement.classList.add("option");
+                optionElement.textContent = option;
+                optionElement.onclick = () => checkAnswer(option);
+                optionsContainer.appendChild(optionElement);
+            });
+            startTimer();
+        }
+    
+        function checkAnswer(selectedOption) {
+            const currentQuestion = questions[currentQuestionIndex];
+            clearTimeout(timer);
+            let correct = selectedOption === currentQuestion.answer;
+            document.getElementById("result").textContent = correct ? "Correct!" : "Wrong!";
+            if (correct) score++;
+            userAnswers.push({ question: currentQuestion.question, selected: selectedOption, correct: currentQuestion.answer, isCorrect: correct });
+            document.getElementById("nextBtn").style.display = "block";
+            document.querySelectorAll(".option").forEach(option => {
+                option.onclick = null;
+            });
+    
+            if (correct) {
+                coins += 10; // Reward 10 coins for each correct answer
+                document.getElementById("coins").textContent = `Coins: ${coins}`;
+            }
+        }
+    
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                displayQuestion();
+                document.getElementById("result").textContent = "";
+                document.getElementById("nextBtn").style.display = "none";
+            } else {
+                showResult();
+            }
+        }
+    
+        function showResult() {
+            document.getElementById("question").textContent = `Quiz completed! Your score is ${score}/20`;
+            document.getElementById("options").innerHTML = "";
+            document.getElementById("result").textContent = "";
+            document.getElementById("nextBtn").style.display = "none";
+            document.getElementById("timer").style.display = "none";
+            document.getElementById("showAnswersBtn").style.display = "block";
+        }
+    
+        function showAllAnswers() {
+            const optionsContainer = document.getElementById("options");
+            optionsContainer.innerHTML = "";
+            questions.forEach((question, index) => {
+                const answerElement = document.createElement("div");
+                answerElement.classList.add("answer");
+                let userAnswer = userAnswers[index];
+                let correctClass = userAnswer && userAnswer.isCorrect ? "correct" : "incorrect";
+                answerElement.classList.add(userAnswer ? correctClass : "incorrect");
+                answerElement.innerHTML = `<b>Question ${index + 1}:</b> ${question.question}<br><b>Your Answer:</b> ${userAnswer ? userAnswer.selected : "No Answer"}<br><b>Correct Answer:</b> ${question.answer}`;
+                optionsContainer.appendChild(answerElement);
+            });
+            document.getElementById("showAnswersBtn").style.display = "none";
+        }
+    
+        function startTimer() {
+            let timeLeft = 15;
+            const timerElement = document.getElementById("timer");
+            timerElement.textContent = `Time left: ${timeLeft}s`;
+    
+            timer = setInterval(() => {
+                timeLeft--;
+                timerElement.textContent = `Time left: ${timeLeft}s`;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    checkAnswer(null); // Move to next question if time runs out
+                }
+            }, 1000);
+        }
+    
+        function startQuiz() {
+            document.getElementById("startQuizWindow").style.display = "none";
+            document.querySelector(".container").style.display = "block";
+            displayQuestion();
+        }
+    
+        shuffle(questions);
+        shuffleOptions(questions);
+    </script>
+    
+</body>
+</html>
